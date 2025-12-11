@@ -56,6 +56,8 @@ class PositionTree
 			move moveMade;
 			char colorToMove;
 			int8_t positionState = 0;
+			bool isCapture = false;
+			bool isCheck = false;
             int depth;
 			int longestBranchDepth = 0;
 			float instantEval = 0; //A biased evaluation that only takes the current position into account

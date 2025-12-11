@@ -1,0 +1,11 @@
+b positiontree.cc:226 if returnValue==false
+target record
+run
+uci
+ucinewgame
+position startpos
+isready
+go movetime 7000
+position startpos moves d2d4 d7d5
+isready
+go movetime 7000
