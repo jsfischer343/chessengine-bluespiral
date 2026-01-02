@@ -79,7 +79,6 @@ PositionTree::treenode* PositionTree::generatePositionTreeRecursive(treenode* no
 		node->isCheck = node->position->isInCheck();
 		node->branchRecursiveAvg = node->instantEval;
 		node->branchBest = node->instantEval;
-		node->longestBranchDepth = node->depth;
 		if(currentNodePositionObjIsEphemeral)
 		{
 			destroyTreeNodePositionObjsRecursiveUpwards(node);
@@ -99,7 +98,6 @@ PositionTree::treenode* PositionTree::generatePositionTreeRecursive(treenode* no
 		node->isCheck = node->position->isInCheck();
 		node->branchRecursiveAvg = node->instantEval;
 		node->branchBest = node->instantEval;
-		node->longestBranchDepth = node->depth;
 		refreshTreeCalculationsRecursiveUpwards(node);
 		if(currentNodePositionObjIsEphemeral)
 		{
@@ -121,7 +119,6 @@ PositionTree::treenode* PositionTree::generatePositionTreeRecursive(treenode* no
 		node->isCheck = node->position->isInCheck();
 		node->branchRecursiveAvg = node->instantEval;
 		node->branchBest = node->instantEval;
-		node->longestBranchDepth = node->depth;
 		if(currentNodePositionObjIsEphemeral)
 		{
 			destroyTreeNodePositionObjsRecursiveUpwards(node);
@@ -158,7 +155,6 @@ PositionTree::treenode* PositionTree::generatePositionTreeRecursive(treenode* no
 				node->children[i]->instantEval = resultingPosition->getInstantEval();
 			}
 			node->children[i]->depth = node->children[i]->parent->depth+1; //set depth of child
-			node->children[i]->longestBranchDepth = node->children[i]->depth;
 			node->children[i] = generatePositionTreeRecursive(node->children[i], depth-1); //call tree generation recursively
 			if(node->children[i]->depth>=(POSITION_OBJ_EPHEMERAL_DEPTH+root->depth)) //if the tree layer is past a certain pre-defined depth then delete the position object to save memory
 			{
@@ -170,7 +166,6 @@ PositionTree::treenode* PositionTree::generatePositionTreeRecursive(treenode* no
 		node->branchRecursiveAvg = node->branchRecursiveAvg/node->children_L;
 		sortChildrenByBranchBest(node);
 		node->branchBest = node->children[0]->branchBest;
-		refreshLongestBranchDepthRecursiveUpwards(node);
 		delete[] currentMoveArr;
 	}
 	if(currentNodePositionObjIsEphemeral)
@@ -197,10 +192,24 @@ bool PositionTree::expandNextDecisionMatrix()
 			returnValue = this->expandNextBestBranchDeep();
 			break;
 		case 1:
-			returnValue = this->expandNextBestBranchWide();
+			if(!this->expandNextBestBranchWide())
+			{
+				returnValue = this->expandNextBestBranchDeep();
+			}
+			else
+			{
+				returnValue = true;
+			}
 			break;
 		case 2:
-			returnValue = this->expandNextBestBranchRecursiveAvgDeep();
+			if(!this->expandNextBestBranchRecursiveAvgDeep())
+			{
+				returnValue = this->expandNextBestBranchDeep();
+			}
+			else
+			{
+				returnValue = true;
+			}
 			break;
 		case 3:
 			if(!this->expandNextCheckDeep())
@@ -226,7 +235,7 @@ bool PositionTree::expandNextDecisionMatrix()
 			throw;
 			break;
 	}
-	if(decisionMatrixStateIterator>=4) //TEMP: set to 2 (default should be 4) //note: current check and capture expansion algorithms are extremely slow
+	if(decisionMatrixStateIterator>=4)
 	{
 		decisionMatrixStateIterator=0;
 	}
@@ -296,7 +305,7 @@ PositionTree::treenode* PositionTree::expandNextBestBranchWide_findExpansionBran
 		return NULL;
 	}
 	int currentLevel=node->depth+1;
-	while(currentLevel<=node->longestBranchDepth)
+	while(currentLevel<root->depth+MAX_DEPTH)
 	{
 		treenode* nextNodeToExpand;
 		for(int i=0;i<node->children_L;i++)
@@ -529,34 +538,6 @@ void PositionTree::refreshTreeCalculationsRecursiveUpwards(treenode* node)
 		refreshTreeCalculationsRecursiveUpwards(node->parent);
 	}
 }
-void PositionTree::refreshLongestBranchDepthRecursiveUpwards(treenode* node)
-{
-	if(node==NULL)
-	{
-		treeInfo.depth = root->longestBranchDepth-root->depth;
-		return;
-	}
-	else
-	{
-		if(node->children_L==0)
-		{
-			node->longestBranchDepth = node->depth;
-		}
-		else
-		{
-			int maxLongestBranchDepth = 0;
-			for(int i=0;i<node->children_L;i++)
-			{
-				if(node->children[i]->longestBranchDepth>maxLongestBranchDepth)
-				{
-					maxLongestBranchDepth = node->children[i]->longestBranchDepth;
-				}
-			}
-			node->longestBranchDepth = maxLongestBranchDepth;
-		}
-		refreshLongestBranchDepthRecursiveUpwards(node->parent);
-	}
-}
 //Destroy
 void PositionTree::destroyEntireTree_recursive(treenode* node)
 {
@@ -636,7 +617,6 @@ void PositionTree::destroySubTree(treenode* node)
 		}
 		node->parent->children_L--;
 		treeInfo.totalNodes--;
-		refreshLongestBranchDepthRecursiveUpwards(node->parent);
 		//2. Run destroyEntireTree_recursive on 'node' (i.e. the child)
 		destroyEntireTree_recursive(node);
 	}
@@ -952,7 +932,7 @@ void PositionTree::printPositionTree_recursive(PositionTree::treenode* node, int
     {
         printf("\t");
     }
-    printf("[%d]: %s  IE: %.3f\tBRA: %.3f\tBB: %.3f\tBMD: %d\n",node->depth,moveNotation,node->instantEval,node->branchRecursiveAvg,node->branchBest,node->longestBranchDepth);
+    printf("[%d]: %s  IE: %.3f\tBRA: %.3f\tBB: %.3f\n",node->depth,moveNotation,node->instantEval,node->branchRecursiveAvg,node->branchBest);
 	if(node->children_L!=0&&depth!=0)
 	{
 		for(int i=0;i<node->children_L;i++)

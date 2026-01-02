@@ -59,7 +59,6 @@ class PositionTree
 			bool isCapture = false;
 			bool isCheck = false;
             int depth;
-			int longestBranchDepth = 0;
 			float instantEval = 0; //A biased evaluation that only takes the current position into account
 			float branchRecursiveAvg = 0; //The average of all this node's childrens' branchRecursiveAverages (recursive metric)
 			float branchBest = 0; //The best "response" if this move (node) was selected (recursive metric)
@@ -114,7 +113,6 @@ class PositionTree
 			// 	treenode* expandNextCaptureWide_findExpansionBranch_limitDepthRecursive(treenode* node, int depthLimit);
 		//Refresh
 		void refreshTreeCalculationsRecursiveUpwards(treenode* node);
-		void refreshLongestBranchDepthRecursiveUpwards(treenode* node);
         //Destroy
 		void destroyEntireTree();
 			void destroyEntireTree_recursive(treenode* node);

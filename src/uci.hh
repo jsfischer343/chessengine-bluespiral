@@ -49,8 +49,8 @@ class UCI
             bool ponder = false;
             long wTime = -1;
             long bTime = -1;
-            long wInc = -1;
-            long bInc = -1;
+            int wInc = -1;
+            int bInc = -1;
             int movesToGo = -1;
             int depth = -1;
             int nodes = -1;
@@ -113,6 +113,9 @@ class UCI
         // void out_registration(); //not used
         void out_info();
         void out_sendOptions();
+
+        //Time Management
+        // bool continueThinking(long wTime, long bTime);
 
         //Utility
         move uciNotation_TO_move(std::string uciMoveString);

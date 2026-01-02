@@ -27,13 +27,31 @@
 
 void printWelcomeText()
 {
-	printf("Bluespiral Chess Engine, Version %s, 2025, %s\n",GLOBAL_BLUESPIRAL_VERSION,GLOBAL_CODE_SOURCE);
-	printf("%s\n",GLOBAL_LICENSE_STATEMENT);
+	std::cout << "Bluespiral Chess Engine, Version " << GLOBAL_BLUESPIRAL_VERSION << ", 2025, " << "\n";
+	std::cout << GLOBAL_LICENSE_STATEMENT << std::endl;
 	return;
 }
 
 int main()
 {
+	//debug
+	// PositionTree* debugPT = new PositionTree("6k1/8/4q3/8/1Q6/8/8/5K2 w - - 0 1",1);
+ //    for(int i=0;i<15;i++)
+ //    {
+ //        debugPT->printPositionTree(3);
+ //        debugPT->printTreeInfo();
+ //        if(!debugPT->expandNextCheckDeep())
+ //        {
+ //            debugPT->expandNextBestBranchDeep();
+ //        }
+ //    }
+ //    debugPT->printPositionTree(3);
+ //    debugPT->printTreeInfo();
+    // Position* debugPosition = debugPT->getCurrentPosition();
+    // debugPosition->printBoard();
+    // debugPosition->printInfo();
+    // debugPosition->printInstantEvalBreakdown();
+
 	printWelcomeText();
 	std::string userInput;
 	CLI bluespiralCLI;

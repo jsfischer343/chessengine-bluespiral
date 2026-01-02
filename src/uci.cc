@@ -872,7 +872,7 @@ bool UCI::in_go_searchThread_shouldStop()
     }
     if(uciGoParams.infinite == false)
     {
-        //TODO: implement time managment algorithm for use of wTime, bTime, increment, movesToGo
+        //TODO: implement time management algorithm for use of wTime, bTime, increment, movesToGo
         //TODO: add logic to stop when nodes, depth
         //TODO: add logic for finding mate in x moves (if not found it needs to return null move 0000)
         //TODO: research the concept of ponder more so as to understand how to implement it correctly
@@ -1014,6 +1014,20 @@ void UCI::out_sendOptions()
 {
     std::cout << "option name Quiet Mode type check default false" << std::endl;
 }
+
+// //Time Management
+// bool continueThinking(long wTime, long bTime, char colorToMove)
+// {
+//     if(colorToMove=='w')
+//     {
+//         double whiteToBlackTimeRatio = static_cast<double>wTime/bTime
+//
+//     }
+//     else
+//     {
+//
+//     }
+// }
 
 //Utility
 move UCI::uciNotation_TO_move(std::string uciMoveString)
