@@ -27,6 +27,22 @@ struct move
 	int8_t endRank = -1;
 	int8_t endFile = -1;
 	char endPieceType = '\0'; //needed exclusively for promotion moves
+	move()
+	{
+		this->startRank = -1;
+		this->startFile = -1;
+		this->endRank = -1;
+		this->endFile = -1;
+		this->endPieceType = '\0';
+	}
+	move(int8_t startRank, int8_t startFile, int8_t endRank, int8_t endFile, char endPieceType)
+	{
+		this->startRank = startRank;
+		this->startFile = startFile;
+		this->endRank = endRank;
+		this->endFile = endFile;
+		this->endPieceType = endPieceType;
+	}
 	static bool movesEqual(move move1, move move2)
 	{
 		if(move1.startRank==move2.startRank &&

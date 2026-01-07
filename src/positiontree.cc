@@ -61,7 +61,6 @@ PositionTree::~PositionTree()
 //Create
 PositionTree::treenode* PositionTree::generatePositionTreeRecursive(treenode* node, int depth)
 {
-	move* currentMoveArr;
 	bool currentNodePositionObjIsEphemeral = false;
 
 	if(node->position==NULL) //check to make sure that position object exists for this node
@@ -69,36 +68,33 @@ PositionTree::treenode* PositionTree::generatePositionTreeRecursive(treenode* no
 		currentNodePositionObjIsEphemeral = true;
 		reinstantiateTreeNodePositionObjsRecursiveUpwards(node);
 	}
-
-	if(depth==0 || node->position->positionState!=0 || node->drawByRepetition!=false) //if the node is not in play (i.e. no legal moves), draw by repetition, or depth is met then return this node and stop generating
+	if(node->children_L!=0) //node already has children but specified recursive depth has not been reached yet (uncommon case)
 	{
-		node->colorToMove = node->position->colorToMove;
-		node->positionState = node->position->positionState;
-		if(node->parent!=NULL)
-			node->isCapture = node->parent->position->isCapture(node->moveMade);
-		node->isCheck = node->position->isInCheck();
-		node->branchRecursiveAvg = node->instantEval;
-		node->branchBest = node->instantEval;
-		if(currentNodePositionObjIsEphemeral)
+		if(depth==0 || node->position->positionState!=Position::positionstate_inplay || node->drawByRepetition==true) //Leaf Node
 		{
-			destroyTreeNodePositionObjsRecursiveUpwards(node);
+			if(currentNodePositionObjIsEphemeral)
+			{
+				destroyTreeNodePositionObjsRecursiveUpwards(node);
+			}
+			return node;
 		}
-		return node;
+		else
+		{
+			for(int i=0;i<node->children_L;i++)
+			{
+				generatePositionTreeRecursive(node->children[i], depth-1);
+			}
+			refreshTreeCalculationsAtNode(node);
+			if(currentNodePositionObjIsEphemeral)
+			{
+				destroyTreeNodePositionObjsRecursiveUpwards(node);
+			}
+			return node;
+		}
 	}
-	else if(node->children_L!=0) //node already has children but specified recursive depth has not been reached yet (uncommon case)
+	if(depth==0 || node->position->positionState!=Position::positionstate_inplay || node->drawByRepetition==true) //Leaf Node: if the node is not in play (i.e. no legal moves), draw by repetition, or depth is met then return this node and stop generating
 	{
-		for(int i=0;i<node->children_L;i++)
-		{
-			generatePositionTreeRecursive(node->children[i], depth-1); //call re
-		}
-		node->colorToMove = node->position->colorToMove;
-		node->positionState = node->position->positionState;
-		if(node->parent!=NULL)
-			node->isCapture = node->parent->position->isCapture(node->moveMade);
-		node->isCheck = node->position->isInCheck();
-		node->branchRecursiveAvg = node->instantEval;
-		node->branchBest = node->instantEval;
-		refreshTreeCalculationsRecursiveUpwards(node);
+		generatePositionTreeRecursive_setupLeafNode(node);
 		if(currentNodePositionObjIsEphemeral)
 		{
 			destroyTreeNodePositionObjsRecursiveUpwards(node);
@@ -109,16 +105,9 @@ PositionTree::treenode* PositionTree::generatePositionTreeRecursive(treenode* no
 	{
 		node->children_L = node->position->getTotalMoves();
 	}
-
-	if(node->children_L==0) //if there are no legal moves then this will be a leaf node
+	if(node->children_L==0)
 	{
-		node->colorToMove = node->position->colorToMove;
-		node->positionState = node->position->positionState;
-		if(node->parent!=NULL)
-			node->isCapture = node->parent->position->isCapture(node->moveMade);
-		node->isCheck = node->position->isInCheck();
-		node->branchRecursiveAvg = node->instantEval;
-		node->branchBest = node->instantEval;
+		generatePositionTreeRecursive_setupLeafNode(node);
 		if(currentNodePositionObjIsEphemeral)
 		{
 			destroyTreeNodePositionObjsRecursiveUpwards(node);
@@ -127,6 +116,7 @@ PositionTree::treenode* PositionTree::generatePositionTreeRecursive(treenode* no
 	}
 	else //otherwise expand the children
 	{
+		move* currentMoveArr;
 		if((node->depth-root->depth)+1>treeInfo.depth)
 		{
 			treeInfo.depth = (node->depth-root->depth)+1;
@@ -163,16 +153,29 @@ PositionTree::treenode* PositionTree::generatePositionTreeRecursive(treenode* no
 			}
 			node->branchRecursiveAvg += node->children[i]->branchRecursiveAvg;
 		}
+		delete[] currentMoveArr;
 		node->branchRecursiveAvg = node->branchRecursiveAvg/node->children_L;
 		sortChildrenByBranchBest(node);
 		node->branchBest = node->children[0]->branchBest;
-		delete[] currentMoveArr;
+		if(currentNodePositionObjIsEphemeral)
+		{
+			destroyTreeNodePositionObjsRecursiveUpwards(node);
+		}
+		return node;
 	}
-	if(currentNodePositionObjIsEphemeral)
+}
+void PositionTree::generatePositionTreeRecursive_setupLeafNode(treenode* node)
+{
+	if(node->colorToMove!='\0') //this checks if the leaf has already been setup
 	{
-		destroyTreeNodePositionObjsRecursiveUpwards(node);
+		node->colorToMove = node->position->colorToMove;
+		node->positionState = node->position->positionState;
+		if(node->parent!=NULL)
+			node->isCapture = node->parent->position->isCapture(node->moveMade);
+		node->isCheck = node->position->isInCheck();
+		node->branchRecursiveAvg = node->instantEval;
+		node->branchBest = node->instantEval;
 	}
-	return node;
 }
 //Expand
 void PositionTree::expandTree(treenode* startingNode, int depth)
@@ -192,26 +195,9 @@ bool PositionTree::expandNextDecisionMatrix()
 			returnValue = this->expandNextBestBranchDeep();
 			break;
 		case 1:
-			if(!this->expandNextBestBranchWide())
-			{
-				returnValue = this->expandNextBestBranchDeep();
-			}
-			else
-			{
-				returnValue = true;
-			}
+			returnValue = this->expandNextBestBranchWide();
 			break;
 		case 2:
-			if(!this->expandNextBestBranchRecursiveAvgDeep())
-			{
-				returnValue = this->expandNextBestBranchDeep();
-			}
-			else
-			{
-				returnValue = true;
-			}
-			break;
-		case 3:
 			if(!this->expandNextCheckDeep())
 			{
 				returnValue = this->expandNextBestBranchDeep();
@@ -221,10 +207,30 @@ bool PositionTree::expandNextDecisionMatrix()
 				returnValue = true;
 			}
 			break;
-		case 4:
+		case 3:
 			if(!this->expandNextCaptureDeep())
 			{
 				returnValue = this->expandNextBestBranchDeep();
+			}
+			else
+			{
+				returnValue = true;
+			}
+			break;
+		case 4:
+			if(!this->expandNextCheckWide())
+			{
+				returnValue = this->expandNextBestBranchWide();
+			}
+			else
+			{
+				returnValue = true;
+			}
+			break;
+		case 5:
+			if(!this->expandNextCaptureWide())
+			{
+				returnValue = this->expandNextBestBranchWide();
 			}
 			else
 			{
@@ -235,7 +241,7 @@ bool PositionTree::expandNextDecisionMatrix()
 			throw;
 			break;
 	}
-	if(decisionMatrixStateIterator>=4)
+	if(decisionMatrixStateIterator>=5)
 	{
 		decisionMatrixStateIterator=0;
 	}
@@ -328,7 +334,7 @@ PositionTree::treenode* PositionTree::expandNextBestBranchWide_findExpansionBran
 	}
 	if(node->children_L==0)
 	{
-		if(node->depth<(MAX_DEPTH+root->depth) && node->positionState==0)
+		if(node->positionState==0)
 		{
 			return node;
 		}
@@ -351,6 +357,7 @@ PositionTree::treenode* PositionTree::expandNextBestBranchWide_findExpansionBran
 	}
 	return NULL;
 }
+/*
 bool PositionTree::expandNextBestBranchRecursiveAvgDeep()
 {
 	treenode* nextNodeToExpand = expandNextBestBranchRecursiveAvgDeep_findExpansionBranchRecursive(root);
@@ -430,6 +437,7 @@ PositionTree::treenode* PositionTree::expandNextBestBranchRecursiveAvgDeep_findE
 	}
 	return NULL;
 }
+*/
 bool PositionTree::expandNextCheckDeep()
 {
 	treenode* nextNodeToExpand = expandNextCheckDeep_findExpansionBranchRecursive(root);
@@ -468,12 +476,74 @@ PositionTree::treenode* PositionTree::expandNextCheckDeep_findExpansionBranchRec
 	}
 	return NULL;
 }
-// bool PositionTree::expandNextCheckWide()
-// {}
-// PositionTree::treenode* PositionTree::expandNextCheckWide_findExpansionBranch(treenode* node)
-// {}
-// PositionTree::treenode* PositionTree::expandNextCheckWide_findExpansionBranch_limitDepthRecursive(treenode* node, int depthLimit)
-// {}
+bool PositionTree::expandNextCheckWide()
+{
+	treenode* nextNodeToExpand = expandNextCheckWide_findExpansionBranch(root);
+	if(nextNodeToExpand==NULL)
+	{
+		return false;
+	}
+	expandTree(nextNodeToExpand,1);
+	refreshTreeCalculationsRecursiveUpwards(nextNodeToExpand->parent);
+	return true;
+}
+PositionTree::treenode* PositionTree::expandNextCheckWide_findExpansionBranch(treenode* node)
+{
+	if(node->children_L==0)
+	{
+		if(node->depth<(MAX_DEPTH+root->depth) && node->positionState==0 && node->isCheck)
+		{
+			return node;
+		}
+		return NULL;
+	}
+	int currentLevel=node->depth+1;
+	while(currentLevel<root->depth+MAX_DEPTH)
+	{
+		treenode* nextNodeToExpand;
+		for(int i=0;i<node->children_L;i++)
+		{
+			nextNodeToExpand = expandNextCheckWide_findExpansionBranch_limitDepthRecursive(node->children[i], currentLevel);
+			if(nextNodeToExpand!=NULL)
+			{
+				return nextNodeToExpand;
+			}
+		}
+		currentLevel++;
+	}
+	return NULL;
+}
+PositionTree::treenode* PositionTree::expandNextCheckWide_findExpansionBranch_limitDepthRecursive(treenode* node, int depthLimit)
+{
+	if(node->depth>depthLimit)
+	{
+		return NULL;
+	}
+	if(node->children_L==0)
+	{
+		if(node->positionState==0 && node->isCheck)
+		{
+			return node;
+		}
+		else
+		{
+			return NULL;
+		}
+	}
+	else
+	{
+		treenode* nextNodeToExpand;
+		for(int i=0;i<node->children_L;i++)
+		{
+			nextNodeToExpand = expandNextCheckWide_findExpansionBranch_limitDepthRecursive(node->children[i], depthLimit);
+			if(nextNodeToExpand!=NULL)
+			{
+				return nextNodeToExpand;
+			}
+		}
+	}
+	return NULL;
+}
 bool PositionTree::expandNextCaptureDeep()
 {
 	treenode* nextNodeToExpand = expandNextCaptureDeep_findExpansionBranchRecursive(root);
@@ -512,18 +582,86 @@ PositionTree::treenode* PositionTree::expandNextCaptureDeep_findExpansionBranchR
 	}
 	return NULL;
 }
-// bool PositionTree::expandNextCaptureWide()
-// {}
-// PositionTree::treenode* PositionTree::expandNextCaptureWide_findExpansionBranch(treenode* node)
-// {}
-// PositionTree::treenode* PositionTree::expandNextCaptureWide_findExpansionBranch_limitDepthRecursive(treenode* node, int depthLimit)
-// {}
+bool PositionTree::expandNextCaptureWide()
+{
+	treenode* nextNodeToExpand = expandNextCaptureWide_findExpansionBranch(root);
+	if(nextNodeToExpand==NULL)
+	{
+		return false;
+	}
+	expandTree(nextNodeToExpand,1);
+	refreshTreeCalculationsRecursiveUpwards(nextNodeToExpand->parent);
+	return true;
+}
+PositionTree::treenode* PositionTree::expandNextCaptureWide_findExpansionBranch(treenode* node)
+{
+	if(node->children_L==0)
+	{
+		if(node->depth<(MAX_DEPTH+root->depth) && node->positionState==0 && node->isCapture)
+		{
+			return node;
+		}
+		return NULL;
+	}
+	int currentLevel=node->depth+1;
+	while(currentLevel<root->depth+MAX_DEPTH)
+	{
+		treenode* nextNodeToExpand;
+		for(int i=0;i<node->children_L;i++)
+		{
+			nextNodeToExpand = expandNextCaptureWide_findExpansionBranch_limitDepthRecursive(node->children[i], currentLevel);
+			if(nextNodeToExpand!=NULL)
+			{
+				return nextNodeToExpand;
+			}
+		}
+		currentLevel++;
+	}
+	return NULL;
+}
+PositionTree::treenode* PositionTree::expandNextCaptureWide_findExpansionBranch_limitDepthRecursive(treenode* node, int depthLimit)
+{
+	if(node->depth>depthLimit)
+	{
+		return NULL;
+	}
+	if(node->children_L==0)
+	{
+		if(node->positionState==0 && node->isCapture)
+		{
+			return node;
+		}
+		else
+		{
+			return NULL;
+		}
+	}
+	else
+	{
+		treenode* nextNodeToExpand;
+		for(int i=0;i<node->children_L;i++)
+		{
+			nextNodeToExpand = expandNextCaptureWide_findExpansionBranch_limitDepthRecursive(node->children[i], depthLimit);
+			if(nextNodeToExpand!=NULL)
+			{
+				return nextNodeToExpand;
+			}
+		}
+	}
+	return NULL;
+}
 //Refresh
 void PositionTree::refreshTreeCalculationsRecursiveUpwards(treenode* node)
 {
 	if(node==NULL)
 	{
 		return;
+	}
+	else if(node->children_L==0)
+	{
+		node->branchRecursiveAvg = node->instantEval;
+		node->branchBest = node->instantEval;
+		refreshTreeCalculationsRecursiveUpwards(node->parent);
 	}
 	else
 	{
@@ -536,6 +674,29 @@ void PositionTree::refreshTreeCalculationsRecursiveUpwards(treenode* node)
 		}
 		node->branchRecursiveAvg = node->branchRecursiveAvg/node->children_L;
 		refreshTreeCalculationsRecursiveUpwards(node->parent);
+	}
+}
+void PositionTree::refreshTreeCalculationsAtNode(treenode* node)
+{
+	if(node==NULL)
+	{
+		return;
+	}
+	else if(node->children_L==0)
+	{
+		node->branchRecursiveAvg = node->instantEval;
+		node->branchBest = node->instantEval;
+	}
+	else
+	{
+		sortChildrenByBranchBest(node);
+		node->branchBest = node->children[0]->branchBest;
+		node->branchRecursiveAvg = 0;
+		for(int i=0;i<node->children_L;i++)
+		{
+			node->branchRecursiveAvg += node->children[i]->branchRecursiveAvg;
+		}
+		node->branchRecursiveAvg = node->branchRecursiveAvg/node->children_L;
 	}
 }
 //Destroy
@@ -636,7 +797,7 @@ void PositionTree::reinstantiateTreeNodePositionObjsRecursiveUpwards(treenode* n
 }
 void PositionTree::destroyTreeNodePositionObjsRecursiveUpwards(treenode* node)
 {
-	if(node->depth<(POSITION_OBJ_EPHEMERAL_DEPTH+root->depth))
+	if(node->depth<(POSITION_OBJ_EPHEMERAL_DEPTH+root->depth)||node->position==NULL)
 	{
 		return;
 	}
@@ -645,22 +806,6 @@ void PositionTree::destroyTreeNodePositionObjsRecursiveUpwards(treenode* node)
 		delete node->position;
 		node->position = NULL;
 		destroyTreeNodePositionObjsRecursiveUpwards(node->parent);
-	}
-}
-void PositionTree::destroyCurrentTreeNodePositionObject(treenode* node)
-{
-	if(node->depth<(POSITION_OBJ_EPHEMERAL_DEPTH+root->depth))
-	{
-		return;
-	}
-	if(node!=NULL&&node->position!=NULL)
-	{
-		delete node->position;
-		node->position = NULL;
-	}
-	else
-	{
-		throw;
 	}
 }
 
@@ -888,6 +1033,14 @@ void PositionTree::printTreeInfo()
 }
 void PositionTree::printPositionTree_recursive(PositionTree::treenode* node)
 {
+	bool currentNodePositionObjIsEphemeral = false;
+
+	if(node->position==NULL) //check to make sure that position object exists for this node
+	{
+		currentNodePositionObjIsEphemeral = true;
+		reinstantiateTreeNodePositionObjsRecursiveUpwards(node);
+	}
+
 	char* moveNotation;
 	if(node->parent==NULL)
 	{
@@ -910,6 +1063,11 @@ void PositionTree::printPositionTree_recursive(PositionTree::treenode* node)
 			printPositionTree_recursive(node->children[i]);
 		}
 	}
+
+	if(currentNodePositionObjIsEphemeral)
+	{
+		destroyTreeNodePositionObjsRecursiveUpwards(node);
+	}
     delete[] moveNotation;
 }
 void PositionTree::printPositionTree()
@@ -918,6 +1076,14 @@ void PositionTree::printPositionTree()
 }
 void PositionTree::printPositionTree_recursive(PositionTree::treenode* node, int depth)
 {
+	bool currentNodePositionObjIsEphemeral = false;
+
+	if(node->position==NULL) //check to make sure that position object exists for this node
+	{
+		currentNodePositionObjIsEphemeral = true;
+		reinstantiateTreeNodePositionObjsRecursiveUpwards(node);
+	}
+
 	char* moveNotation;
 	if(node->parent==NULL)
 	{
@@ -939,6 +1105,11 @@ void PositionTree::printPositionTree_recursive(PositionTree::treenode* node, int
 		{
 			printPositionTree_recursive(node->children[i],depth-1);
 		}
+	}
+
+	if(currentNodePositionObjIsEphemeral)
+	{
+		destroyTreeNodePositionObjsRecursiveUpwards(node);
 	}
     delete[] moveNotation;
 }

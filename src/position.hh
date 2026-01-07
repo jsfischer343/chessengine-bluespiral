@@ -35,21 +35,18 @@
 
 //Instant Evaluation Tuning Parameters
 //Symmetric Parameters
-#define PIECE_CONTROL_WEIGHT 0.25	//weight given to controlling a square with a enemy piece on it (in proportion to that piece)
+#define PIECE_CONTROL_WEIGHT 0.1
 #define SQUARE_CONTROL_WEIGHT 0.8	//flat weight given to controlling a square regardless of if there is a piece on it or not
-#define KING_ADJACENT_SQUARE_CONTROL_WEIGHT_DEFENSIVE 0
-#define KING_ADJACENT_SQUARE_CONTROL_WEIGHT_OFFENSIVE 0
-#define PAWN_WEIGHT_1 0 //value of pawn that is 1 out 6 squares from promotion
-#define PAWN_WEIGHT_2 0 //and so on
-#define PAWN_WEIGHT_3 0
-#define PAWN_WEIGHT_4 0
-#define PAWN_WEIGHT_PASSED_1 0.2
-#define PAWN_WEIGHT_PASSED_2 0.2
-#define PAWN_WEIGHT_PASSED_3 0.3
-#define PAWN_WEIGHT_PASSED_4 0.5
-#define PAWN_WEIGHT_PASSED_5 1 //value of pawn that is one square from promotion
-//Asymmetric Parameters
-#define TURN_BASED_CONTROL_BONUS 4 //multiplicative factor for controlling a piece on your turn
+#define KING_ADJACENT_SQUARE_CONTROL_WEIGHT 0.4
+// #define PAWN_WEIGHT_1 0.01 //value of pawn that is 1 out 6 squares from promotion
+// #define PAWN_WEIGHT_2 0.02 //and so on
+// #define PAWN_WEIGHT_3 0.03
+// #define PAWN_WEIGHT_4 0.04
+// #define PAWN_WEIGHT_PASSED_1 0.1
+// #define PAWN_WEIGHT_PASSED_2 0.15
+// #define PAWN_WEIGHT_PASSED_3 0.2
+// #define PAWN_WEIGHT_PASSED_4 0.5
+// #define PAWN_WEIGHT_PASSED_5 1 //value of pawn that is one square from promotion
 
 class Position
 {
@@ -90,8 +87,7 @@ class Position
 			float material_queens = 0;
 			//Positional
 			float positional_squarecontrol_base = 0;
-			float positional_squarecontrol_king_defensive = 0;
-			float positional_squarecontrol_king_offensive = 0;
+			float positional_squarecontrol_king = 0;
 			float positional_squarecontrol_pawns = 0;
 			float positional_squarecontrol_knights = 0;
 			float positional_squarecontrol_bishops = 0;
