@@ -27,7 +27,7 @@
 #include "position.hh"
 #include "positiontree.hh"
 
-#define MAX_COMMAND_TOKENS 200
+#define MAX_COMMAND_TOKENS 500
 #define SEARCH_TIME_MARGIN 10 //margin in milliseconds that is used to ensure that the engine ends on time
 
 class UCI
@@ -113,9 +113,6 @@ class UCI
         // void out_registration(); //not used
         void out_info();
         void out_sendOptions();
-
-        //Time Management
-        // bool continueThinking(long wTime, long bTime);
 
         //Utility
         move uciNotation_TO_move(std::string uciMoveString);

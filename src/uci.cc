@@ -1015,20 +1015,6 @@ void UCI::out_sendOptions()
     std::cout << "option name Quiet Mode type check default false" << std::endl;
 }
 
-// //Time Management
-// bool continueThinking(long wTime, long bTime, char colorToMove)
-// {
-//     if(colorToMove=='w')
-//     {
-//         double whiteToBlackTimeRatio = static_cast<double>wTime/bTime
-//
-//     }
-//     else
-//     {
-//
-//     }
-// }
-
 //Utility
 move UCI::uciNotation_TO_move(std::string uciMoveString)
 {

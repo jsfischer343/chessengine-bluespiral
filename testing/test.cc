@@ -27,6 +27,9 @@
 int main()
 {
     PositionTree* positionTree = new PositionTree("4k3/3p4/8/8/8/8/3P4/2K5 w - - 0 1",1);
+    Position* currentPosition = positionTree->getCurrentPosition();
+    currentPosition->printBoard();
+    currentPosition->printInstantEvalBreakdown();
     positionTree->printPositionTree();
     positionTree->expandNextBestBranchDeep();
     printf("~~~~~~~~~~~~~~\n");

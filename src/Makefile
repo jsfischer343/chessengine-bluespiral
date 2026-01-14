@@ -9,13 +9,11 @@ windows64:
 debug:
 	g++ -g uci.cc cli.cc positiontree.cc position.cc main.cc -o bluespiral
 test:
-	g++ -g uci.cc cli.cc positiontree.cc position.cc ../testing/test.cc -o bluespiral_test
+	g++ -g uci.cc cli.cc positiontree.cc position.cc ../testing/test.cc -o bluespiral
 benchmark:
-	g++ -g uci.cc cli.cc positiontree.cc position.cc ../testing/benchmark.cc -o bluespiral_benchmark
+	g++ -g uci.cc cli.cc positiontree.cc position.cc ../testing/benchmark.cc -o bluespiral
 clean:
 	rm bluespiral -f
-	rm bluespiral_test -f
-	rm bluespiral_benchmark -f
 	rm bluespiral_w32.exe -f
 	rm bluespiral_w64.exe -f
 	rm massif* -f

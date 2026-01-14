@@ -43,7 +43,7 @@ class PositionTree
 			int depth = 0;
 		};
 		typedef struct treeinfo treeinfo;
-		treeinfo treeInfo; //Informaiton about the positiontree for optimizations
+		treeinfo treeInfo; //Informaiton about the positiontree that is used for uci info posts
 
 	private:
 		//STRUCTS

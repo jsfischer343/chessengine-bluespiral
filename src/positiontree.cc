@@ -241,7 +241,7 @@ bool PositionTree::expandNextDecisionMatrix()
 			throw;
 			break;
 	}
-	if(decisionMatrixStateIterator>=5)
+	if(decisionMatrixStateIterator>=1)
 	{
 		decisionMatrixStateIterator=0;
 	}
@@ -690,6 +690,7 @@ void PositionTree::refreshTreeCalculationsAtNode(treenode* node)
 	else
 	{
 		sortChildrenByBranchBest(node);
+		//sortChildrenByBranchRecursiveAverage(node);
 		node->branchBest = node->children[0]->branchBest;
 		node->branchRecursiveAvg = 0;
 		for(int i=0;i<node->children_L;i++)

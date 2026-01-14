@@ -25,8 +25,6 @@
 #include "global.hh"
 #include "uci.hh"
 
-#define MAX_COMMAND_TOKENS 200
-
 class CLI
 {
     private:
